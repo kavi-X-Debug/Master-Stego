@@ -185,7 +185,7 @@ function renderStringsPanel(stringsResult, flagsResult) {
         wrapper.appendChild(header);
 
         const pre = document.createElement("pre");
-        pre.className = "text-[11px] text-green-400 whitespace-pre-wrap max-h-48 overflow-auto";
+        pre.className = "text-[11px] text-green-400 whitespace-pre-wrap break-all max-h-48 overflow-auto max-w-full";
 
         const lines = (data.sample || []).slice(0, 300);
         const rawText = lines.join("\n");
