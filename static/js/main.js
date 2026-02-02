@@ -2,6 +2,7 @@ const form = document.getElementById("analyze-form");
 const fileInput = document.getElementById("image-input");
 const resetButton = document.getElementById("reset-button");
 const statusText = document.getElementById("status-text");
+const loadingOverlay = document.getElementById("loading-overlay");
 const flagsContainer = document.getElementById("flags-container");
 const extractedFilesContainer = document.getElementById("extracted-files");
 
@@ -27,6 +28,20 @@ const encodingsPanel = document.getElementById("encodings-panel");
 
 function setStatus(text) {
     statusText.textContent = text;
+}
+
+
+function showLoader() {
+    if (loadingOverlay) {
+        loadingOverlay.classList.add("active");
+    }
+}
+
+
+function hideLoader() {
+    if (loadingOverlay) {
+        loadingOverlay.classList.remove("active");
+    }
 }
 
 
@@ -85,6 +100,7 @@ function resetUI() {
     extractedFilesContainer.innerHTML = '<p class="text-gray-500">Nothing extracted yet.</p>';
 
     switchTab("file-info");
+    hideLoader();
 }
 
 
@@ -253,6 +269,7 @@ form.addEventListener("submit", async (event) => {
     formData.append("file", fileInput.files[0]);
 
     setStatus("Running full analysis pipeline...");
+    showLoader();
 
     try {
         const response = await fetch("/api/analyze", {
@@ -263,6 +280,7 @@ form.addEventListener("submit", async (event) => {
         if (!response.ok) {
             const errorPayload = await response.json().catch(() => ({}));
             setStatus(`Error: ${errorPayload.error || response.statusText}`);
+            hideLoader();
             return;
         }
 
@@ -273,6 +291,8 @@ form.addEventListener("submit", async (event) => {
     } catch (err) {
         setStatus("Request failed.");
         console.error(err);
+    } finally {
+        hideLoader();
     }
 });
 

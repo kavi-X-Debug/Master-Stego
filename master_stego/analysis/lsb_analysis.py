@@ -25,9 +25,23 @@ def analyze(file_path: str) -> Dict[str, Any]:
             "length": len(decoded),
         }
 
-    combined_bits = (arr[:, :, 0] & 1) ^ ((arr[:, :, 1] & 1) << 1) ^ ((arr[:, :, 2] & 1) << 2)
-    combined_lsb = combined_bits & 1
-    combined_text = _bits_to_text(combined_lsb)
+    rgb = arr[:, :, :3]
+    r_lsb = (rgb[:, :, 0] & 1).flatten()
+    g_lsb = (rgb[:, :, 1] & 1).flatten()
+    b_lsb = (rgb[:, :, 2] & 1).flatten()
+
+    interleaved_bits = []
+    max_len = max(len(r_lsb), len(g_lsb), len(b_lsb))
+    for i in range(max_len):
+        if i < len(r_lsb):
+            interleaved_bits.append(r_lsb[i])
+        if i < len(g_lsb):
+            interleaved_bits.append(g_lsb[i])
+        if i < len(b_lsb):
+            interleaved_bits.append(b_lsb[i])
+
+    interleaved_bits = np.array(interleaved_bits, dtype=np.uint8)
+    combined_text = _bits_to_text(interleaved_bits)
     result["combined"] = {
         "preview": combined_text[:1024],
         "length": len(combined_text),
