@@ -40,27 +40,39 @@ def run_full_analysis(file_path, session_id, session_dir):
         "extracted_files": [],
     }
 
-    result["file_info"] = file_info.analyze(file_path)
-    result["exif"] = exif_metadata.analyze(file_path)
-    result["strings"] = strings_analysis.analyze(file_path)
-    result["header_footer"] = header_footer.analyze(file_path)
-    result["binwalk"] = binwalk_analysis.analyze(file_path, session_dir)
-    result["color_channels"] = color_channels.analyze(file_path, session_id, session_dir)
-    result["enhancements"] = enhancements.analyze(file_path, session_id, session_dir)
-    result["bitplanes"] = bitplanes.analyze(file_path, session_id, session_dir)
-    result["lsb"] = lsb_analysis.analyze(file_path)
+    def safe_run(name, func):
+        try:
+            return func()
+        except Exception as exc:
+            return {"error": str(exc), "module": name}
+
+    result["file_info"] = safe_run("file_info", lambda: file_info.analyze(file_path))
+    result["exif"] = safe_run("exif", lambda: exif_metadata.analyze(file_path))
+    result["strings"] = safe_run("strings", lambda: strings_analysis.analyze(file_path))
+    result["header_footer"] = safe_run("header_footer", lambda: header_footer.analyze(file_path))
+    result["binwalk"] = safe_run("binwalk", lambda: binwalk_analysis.analyze(file_path, session_dir))
+    result["color_channels"] = safe_run(
+        "color_channels", lambda: color_channels.analyze(file_path, session_id, session_dir)
+    )
+    result["enhancements"] = safe_run(
+        "enhancements", lambda: enhancements.analyze(file_path, session_id, session_dir)
+    )
+    result["bitplanes"] = safe_run("bitplanes", lambda: bitplanes.analyze(file_path, session_id, session_dir))
+    result["lsb"] = safe_run("lsb", lambda: lsb_analysis.analyze(file_path))
 
     _, ext = os.path.splitext(file_path.lower())
     if ext == ".png":
-        result["zsteg"] = zsteg_module.analyze(file_path)
+        result["zsteg"] = safe_run("zsteg", lambda: zsteg_module.analyze(file_path))
     else:
         result["zsteg"] = {"skipped": True, "reason": "zsteg is PNG-only"}
 
-    result["steghide"] = steghide_module.analyze(file_path, session_dir)
-    result["outguess_openstego"] = outguess_openstego.analyze(file_path, session_dir)
-    result["compression"] = compression_detection.analyze(file_path)
-    result["encodings"] = encoding_detection.analyze(result["strings"])
-    result["flags"] = flag_detection.analyze(result)
+    result["steghide"] = safe_run("steghide", lambda: steghide_module.analyze(file_path, session_dir))
+    result["outguess_openstego"] = safe_run(
+        "outguess_openstego", lambda: outguess_openstego.analyze(file_path, session_dir)
+    )
+    result["compression"] = safe_run("compression", lambda: compression_detection.analyze(file_path))
+    result["encodings"] = safe_run("encodings", lambda: encoding_detection.analyze(result["strings"]))
+    result["flags"] = safe_run("flags", lambda: flag_detection.analyze(result))
 
     extracted = []
     for root, _, files in os.walk(session_dir):
