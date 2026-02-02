@@ -1,5 +1,6 @@
 const form = document.getElementById("analyze-form");
 const fileInput = document.getElementById("image-input");
+const resetButton = document.getElementById("reset-button");
 const statusText = document.getElementById("status-text");
 const flagsContainer = document.getElementById("flags-container");
 const extractedFilesContainer = document.getElementById("extracted-files");
@@ -57,6 +58,38 @@ tabButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
         switchTab(btn.dataset.tab);
     });
+});
+
+
+function resetUI() {
+    fileInput.value = "";
+    setStatus("Idle.");
+
+    fileInfoPanel.textContent = "";
+    exifPanel.textContent = "";
+    headerFooterPanel.textContent = "";
+    binwalkPanel.textContent = "";
+    lsbPanel.textContent = "";
+    zstegPanel.textContent = "";
+    steghidePanel.textContent = "";
+    outguessPanel.textContent = "";
+    compressionPanel.textContent = "";
+    encodingsPanel.textContent = "";
+
+    stringsPanel.innerHTML = "";
+    channelsPanel.innerHTML = "";
+    enhancementsPanel.innerHTML = "";
+    bitplanesPanel.innerHTML = "";
+
+    flagsContainer.innerHTML = '<p class="text-gray-500">No flags detected yet.</p>';
+    extractedFilesContainer.innerHTML = '<p class="text-gray-500">Nothing extracted yet.</p>';
+
+    switchTab("file-info");
+}
+
+
+resetButton.addEventListener("click", () => {
+    resetUI();
 });
 
 

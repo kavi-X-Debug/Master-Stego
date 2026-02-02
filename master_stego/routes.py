@@ -13,6 +13,10 @@ def register_routes(app):
     def index():
         return render_template("index.html")
 
+    @bp.route("/favicon.ico", methods=["GET"])
+    def favicon():
+        return send_from_directory(app.root_path, "fav.png", mimetype="image/png")
+
     @bp.route("/api/analyze", methods=["POST"])
     def analyze():
         if "file" not in request.files:
