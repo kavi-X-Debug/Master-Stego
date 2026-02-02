@@ -94,6 +94,33 @@
                 transform: rotate(405deg);
             }
         }
+
+        .wave-text span {
+            display: inline-block;
+            animation: waveTitle 2s ease-in-out infinite;
+        }
+
+        .wave-text span:nth-child(1) { animation-delay: 0s; }
+        .wave-text span:nth-child(2) { animation-delay: 0.08s; }
+        .wave-text span:nth-child(3) { animation-delay: 0.16s; }
+        .wave-text span:nth-child(4) { animation-delay: 0.24s; }
+        .wave-text span:nth-child(5) { animation-delay: 0.32s; }
+        .wave-text span:nth-child(6) { animation-delay: 0.40s; }
+        .wave-text span:nth-child(7) { animation-delay: 0.48s; }
+        .wave-text span:nth-child(8) { animation-delay: 0.56s; }
+        .wave-text span:nth-child(9) { animation-delay: 0.64s; }
+        .wave-text span:nth-child(10) { animation-delay: 0.72s; }
+        .wave-text span:nth-child(11) { animation-delay: 0.80s; }
+        .wave-text span:nth-child(12) { animation-delay: 0.88s; }
+
+        @keyframes waveTitle {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-4px);
+            }
+        }
     </style>
 </head>
 <body class="bg-black text-gray-100 min-h-screen">
@@ -105,7 +132,9 @@
                     MS
                 </div>
                 <div>
-                    <h1 class="text-xl font-semibold tracking-wide">Master Stego</h1>
+                    <h1 class="text-xl font-semibold tracking-wide wave-text">
+                        <span>M</span><span>a</span><span>s</span><span>t</span><span>e</span><span>r</span><span>&nbsp;</span><span>S</span><span>t</span><span>e</span><span>g</span><span>o</span>
+                    </h1>
                 </div>
             </div>
             <div class="text-xs text-right text-gray-400"></div>
@@ -145,17 +174,35 @@
 
                 <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 transition-transform duration-300 hover:-translate-y-1 hover:border-emerald-500/70 hover:shadow-[0_0_24px_rgba(16,185,129,0.35)]">
                     <h2 class="text-sm font-semibold text-emerald-400 uppercase tracking-wide mb-2">Detected Flags</h2>
-                    <div id="flags-container" class="space-y-2 text-xs max-h-56 overflow-auto">
+                    <div class="space-y-2 mb-3">
+                        <label for="flag-pattern-input" class="block text-[10px] text-gray-400">Custom flag pattern (e.g. <span class="text-emerald-400">flag{}</span>)</label>
+                        <div class="flex space-x-2">
+                            <input
+                                id="flag-pattern-input"
+                                type="text"
+                                placeholder="flag{}"
+                                class="flex-1 bg-black/40 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-emerald-500"
+                            />
+                            <button
+                                type="button"
+                                id="flag-search-button"
+                                class="px-2 py-1 text-[11px] font-semibold rounded bg-emerald-500 text-black hover:bg-emerald-400 transition"
+                            >
+                                Search
+                            </button>
+                        </div>
+                    </div>
+                    <div id="flags-container" class="space-y-2 text-xs max-h-40 overflow-auto">
                         <p class="text-gray-500">No flags detected yet.</p>
+                    </div>
+                    <div class="mt-3 border-t border-gray-800 pt-2">
+                        <p class="text-[10px] text-gray-400 mb-1">Custom matches</p>
+                        <div id="custom-flags-container" class="space-y-1 text-[11px] max-h-32 overflow-auto">
+                            <p class="text-gray-500">No custom pattern searched.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 transition-transform duration-300 hover:-translate-y-1 hover:border-emerald-500/70 hover:shadow-[0_0_24px_rgba(16,185,129,0.35)]">
-                    <h2 class="text-sm font-semibold text-emerald-400 uppercase tracking-wide mb-2">Extracted Files</h2>
-                    <div id="extracted-files" class="space-y-1 text-xs max-h-56 overflow-auto">
-                        <p class="text-gray-500">Nothing extracted yet.</p>
-                    </div>
-                </div>
             </section>
 
             <section class="lg:col-span-3 space-y-4">

@@ -4,7 +4,9 @@ const resetButton = document.getElementById("reset-button");
 const statusText = document.getElementById("status-text");
 const loadingOverlay = document.getElementById("loading-overlay");
 const flagsContainer = document.getElementById("flags-container");
-const extractedFilesContainer = document.getElementById("extracted-files");
+const flagPatternInput = document.getElementById("flag-pattern-input");
+const flagSearchButton = document.getElementById("flag-search-button");
+const customFlagsContainer = document.getElementById("custom-flags-container");
 
 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
@@ -24,6 +26,8 @@ const steghidePanel = document.getElementById("steghide-panel");
 const outguessPanel = document.getElementById("outguess-panel");
 const compressionPanel = document.getElementById("compression-panel");
 const encodingsPanel = document.getElementById("encodings-panel");
+
+let lastResult = null;
 
 
 function setStatus(text) {
@@ -97,7 +101,7 @@ function resetUI() {
     bitplanesPanel.innerHTML = "";
 
     flagsContainer.innerHTML = '<p class="text-gray-500">No flags detected yet.</p>';
-    extractedFilesContainer.innerHTML = '<p class="text-gray-500">Nothing extracted yet.</p>';
+    customFlagsContainer.innerHTML = '<p class="text-gray-500">No custom pattern searched.</p>';
 
     switchTab("file-info");
     hideLoader();
@@ -141,19 +145,21 @@ function renderFlags(flagsResult) {
 }
 
 
-function renderExtractedFiles(sessionId, extractedFiles) {
-    extractedFilesContainer.innerHTML = "";
-    if (!extractedFiles || !extractedFiles.length) {
-        extractedFilesContainer.innerHTML = `<p class="text-gray-500">Nothing extracted.</p>`;
+function renderCustomFlags(matches, message) {
+    customFlagsContainer.innerHTML = "";
+    if (message) {
+        customFlagsContainer.innerHTML = `<p class="text-gray-500">${message}</p>`;
         return;
     }
-    extractedFiles.forEach((entry) => {
-        const a = document.createElement("a");
-        a.href = entry.url;
-        a.textContent = entry.name;
-        a.className = "block text-emerald-400 hover:text-emerald-300";
-        a.target = "_blank";
-        extractedFilesContainer.appendChild(a);
+    if (!matches || !matches.length) {
+        customFlagsContainer.innerHTML = `<p class="text-gray-500">No matches for this pattern.</p>`;
+        return;
+    }
+    matches.forEach((value) => {
+        const div = document.createElement("div");
+        div.className = "bg-gray-800/70 border border-emerald-600/40 rounded px-2 py-1 text-[11px] font-mono text-emerald-300";
+        div.textContent = value;
+        customFlagsContainer.appendChild(div);
     });
 }
 
@@ -220,6 +226,7 @@ function renderImageGrid(container, entries, labelTransform) {
 
 
 function populatePanels(result) {
+    lastResult = result;
     renderJson(fileInfoPanel, result.file_info);
     renderJson(exifPanel, result.exif);
     renderJson(headerFooterPanel, result.header_footer);
@@ -254,7 +261,6 @@ function populatePanels(result) {
     renderImageGrid(bitplanesPanel, bitEntries, (label) => label);
 
     renderFlags(result.flags);
-    renderExtractedFiles(result.session_id, result.extracted_files || []);
 }
 
 
@@ -293,6 +299,91 @@ form.addEventListener("submit", async (event) => {
         console.error(err);
     } finally {
         hideLoader();
+    }
+});
+
+
+function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+
+function buildFlagRegex(pattern) {
+    const raw = pattern.trim();
+    if (!raw) {
+        return null;
+    }
+
+    if (raw.includes("{}")) {
+        const parts = raw.split("{}");
+        const prefix = escapeRegExp(parts[0] || "");
+        const suffix = escapeRegExp(parts[1] || "");
+        return new RegExp(prefix + "\\{.*?\\}" + suffix, "gi");
+    }
+
+    try {
+        return new RegExp(raw, "gi");
+    } catch (e) {
+        return null;
+    }
+}
+
+
+function runCustomFlagSearch() {
+    if (!lastResult) {
+        renderCustomFlags([], "Run analysis first.");
+        return;
+    }
+
+    const pattern = flagPatternInput.value || "";
+    const regex = buildFlagRegex(pattern);
+    if (!regex) {
+        renderCustomFlags([], "Invalid pattern.");
+        return;
+    }
+
+    const corpus = JSON.stringify(lastResult);
+    const unique = new Set();
+    let match;
+
+    while ((match = regex.exec(corpus)) !== null) {
+        if (match[0]) {
+            unique.add(match[0]);
+            if (unique.size >= 50) {
+                break;
+            }
+        }
+    }
+
+    const customValues = Array.from(unique);
+    renderCustomFlags(customValues);
+
+    const existingFlags = (lastResult.flags && Array.isArray(lastResult.flags.flags)) ? lastResult.flags.flags.slice() : [];
+    const seen = new Set(existingFlags.map((f) => f.flag));
+
+    customValues.forEach((val) => {
+        if (!seen.has(val)) {
+            existingFlags.push({
+                flag: val,
+                source: "custom pattern",
+            });
+            seen.add(val);
+        }
+    });
+
+    renderFlags({ flags: existingFlags });
+}
+
+
+flagSearchButton.addEventListener("click", () => {
+    runCustomFlagSearch();
+});
+
+
+flagPatternInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        runCustomFlagSearch();
     }
 });
 
