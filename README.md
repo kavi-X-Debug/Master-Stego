@@ -1,6 +1,4 @@
-<<<<<<< HEAD
-# Master-Stego
-=======
+
 # Master Stego
 
 Master Stego is a CTF-focused image steganography analysis web application inspired by AperiSolve. It is designed as a single-click workbench for common image stego techniques used in Capture-The-Flag challenges.
@@ -67,7 +65,7 @@ Requirements:
   - `binwalk`
   - `zsteg`
   - `steghide`
-  - optionally `outguess`, `openstego`
+
 
 ### Setup
 
@@ -139,7 +137,7 @@ pip install -r requirements.txt
   - Set the start command to the `gunicorn` command above.
 - For advanced setups, define a `Dockerfile` at the repo root and configure system packages there.
 
-## Notes
+
 
 - This project does not implement authentication; do not expose it to untrusted networks without additional hardening.
 - CPU and memory usage depend on the size of uploaded images and the behavior of external CLI tools (e.g., `binwalk`, `zsteg`).
