@@ -9,10 +9,72 @@ from master_stego import TMP_DIR
 from master_stego.analysis.pipeline import run_full_analysis
 
 
+_GEMINI_MODEL_NAME = None
+
+
+def _get_gemini_model(api_key):
+    global _GEMINI_MODEL_NAME
+    if _GEMINI_MODEL_NAME:
+        return _GEMINI_MODEL_NAME
+
+    list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+    req = urllib.request.Request(list_url, method="GET")
+
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = resp.read().decode("utf-8")
+    except Exception:
+        return None
+
+    try:
+        parsed = json.loads(data)
+    except Exception:
+        return None
+
+    models = parsed.get("models") or []
+    if not isinstance(models, list):
+        return None
+
+    def supports_generate(model):
+        methods = model.get("supportedGenerationMethods") or model.get("supportedActions") or []
+        return isinstance(methods, list) and ("generateContent" in methods or "GENERATE_CONTENT" in methods)
+
+    candidates = [m for m in models if supports_generate(m)]
+    if not candidates:
+        return None
+
+    preferred = None
+    for m in candidates:
+        name = m.get("name") or ""
+        if "gemini-1.5-flash" in name:
+            preferred = name
+            break
+    if not preferred:
+        for m in candidates:
+            name = m.get("name") or ""
+            if "gemini-1.5" in name:
+                preferred = name
+                break
+    if not preferred:
+        preferred = candidates[0].get("name")
+
+    if isinstance(preferred, str) and preferred:
+        _GEMINI_MODEL_NAME = preferred
+        return preferred
+
+    return None
+
+
 def _call_gemini(api_key, analysis, message):
+    model_name = _get_gemini_model(api_key)
+    if not model_name:
+        return None, "No Gemini model with generateContent is available for this API key."
+
     url = (
-        "https://generativelanguage.googleapis.com/v1/models/"
-        "gemini-1.5-flash-001:generateContent?key=" + api_key
+        "https://generativelanguage.googleapis.com/v1beta/"
+        + model_name
+        + ":generateContent?key="
+        + api_key
     )
 
     context_text = (
