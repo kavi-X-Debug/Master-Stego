@@ -142,4 +142,4 @@ pip install -r requirements.txt
 - This project does not implement authentication; do not expose it to untrusted networks without additional hardening.
 - CPU and memory usage depend on the size of uploaded images and the behavior of external CLI tools (e.g., `binwalk`, `zsteg`).
 
->>>>>>> 9f72f47 (Initial Commit)
+
