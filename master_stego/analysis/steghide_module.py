@@ -4,10 +4,12 @@ from typing import Dict, Any
 from master_stego.utils.subprocess_utils import run_command
 
 
-def analyze(file_path: str, session_dir: str) -> Dict[str, Any]:
+def analyze(file_path: str, session_dir: str, passphrase: str = "") -> Dict[str, Any]:
     result: Dict[str, Any] = {"available": True, "info": None, "extract": None}
 
-    info_result = run_command(["steghide", "info", file_path, "-p", ""], cwd=session_dir, timeout=60)
+    effective_pass = passphrase or ""
+
+    info_result = run_command(["steghide", "info", file_path, "-p", effective_pass], cwd=session_dir, timeout=60)
     if info_result["stderr"] == "command not found" or info_result["returncode"] is None:
         result["available"] = False
         result["info"] = {
@@ -27,7 +29,7 @@ def analyze(file_path: str, session_dir: str) -> Dict[str, Any]:
     out_name = "steghide_extracted"
     out_path = os.path.join(session_dir, out_name)
     extract_result = run_command(
-        ["steghide", "extract", "-sf", file_path, "-p", "", "-xf", out_name],
+        ["steghide", "extract", "-sf", file_path, "-p", effective_pass, "-xf", out_name],
         cwd=session_dir,
         timeout=120,
     )

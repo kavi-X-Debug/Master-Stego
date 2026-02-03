@@ -173,7 +173,14 @@ def register_routes(app):
         file_path = os.path.join(session_dir, filename)
         uploaded.save(file_path)
 
-        result = run_full_analysis(file_path=file_path, session_id=session_id, session_dir=session_dir)
+        steghide_passphrase = (request.form.get("steghide_passphrase") or "").strip()
+
+        result = run_full_analysis(
+            file_path=file_path,
+            session_id=session_id,
+            session_dir=session_dir,
+            steghide_passphrase=steghide_passphrase,
+        )
 
         return jsonify(result)
 

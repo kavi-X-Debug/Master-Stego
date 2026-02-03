@@ -1,5 +1,6 @@
 const form = document.getElementById("analyze-form");
 const fileInput = document.getElementById("image-input");
+const steghidePassInput = document.getElementById("steghide-passphrase");
 const resetButton = document.getElementById("reset-button");
 const statusText = document.getElementById("status-text");
 const loadingOverlay = document.getElementById("loading-overlay");
@@ -83,6 +84,9 @@ tabButtons.forEach((btn) => {
 
 function resetUI() {
     fileInput.value = "";
+    if (steghidePassInput) {
+        steghidePassInput.value = "";
+    }
     setStatus("Idle.");
 
     fileInfoPanel.textContent = "";
@@ -470,6 +474,10 @@ form.addEventListener("submit", async (event) => {
 
     const formData = new FormData();
     formData.append("file", fileInput.files[0]);
+
+    if (steghidePassInput && steghidePassInput.value) {
+        formData.append("steghide_passphrase", steghidePassInput.value);
+    }
 
     setStatus("Running full analysis pipeline...");
     showLoader();

@@ -19,7 +19,7 @@ from master_stego.analysis import (
 )
 
 
-def run_full_analysis(file_path, session_id, session_dir):
+def run_full_analysis(file_path, session_id, session_dir, steghide_passphrase: str = ""):
     result = {
         "session_id": session_id,
         "file_info": {},
@@ -64,7 +64,9 @@ def run_full_analysis(file_path, session_id, session_dir):
     else:
         result["zsteg"] = {"skipped": True, "reason": "zsteg is PNG-only"}
 
-    result["steghide"] = safe_run("steghide", lambda: steghide_module.analyze(file_path, session_dir))
+    result["steghide"] = safe_run(
+        "steghide", lambda: steghide_module.analyze(file_path, session_dir, steghide_passphrase)
+    )
     result["encodings"] = safe_run("encodings", lambda: encoding_detection.analyze(result["strings"]))
     result["flags"] = safe_run("flags", lambda: flag_detection.analyze(result))
 
