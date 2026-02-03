@@ -356,6 +356,10 @@ function renderZstegPanel(zstegResult, flagsResult) {
         zstegPanel.textContent = "No zsteg data.";
         return;
     }
+    if (zstegResult.skipped) {
+        zstegPanel.textContent = "Zsteg is working for only .png Images";
+        return;
+    }
     if (zstegResult.error) {
         zstegPanel.textContent = "zsteg error: " + zstegResult.error;
         return;
@@ -406,6 +410,86 @@ function renderZstegPanel(zstegResult, flagsResult) {
 }
 
 
+function renderBinwalkPanel(binwalkResult, extractedFiles, flagsResult) {
+    binwalkPanel.innerHTML = "";
+    if (!binwalkResult) {
+        binwalkPanel.textContent = "No binwalk data.";
+        return;
+    }
+    if (binwalkResult.error) {
+        binwalkPanel.textContent = "Binwalk error: " + binwalkResult.error;
+        return;
+    }
+
+    if (binwalkResult.available === false) {
+        binwalkPanel.textContent = "binwalk not installed on server.";
+        return;
+    }
+
+    const container = document.createElement("div");
+    container.className = "space-y-3";
+
+    const summaryBlock = document.createElement("div");
+    summaryBlock.className = "border border-gray-800 rounded p-2";
+    const summaryHeader = document.createElement("div");
+    summaryHeader.className = "flex justify-between items-center mb-1";
+    summaryHeader.innerHTML = `
+        <span class="font-semibold text-emerald-400">Binwalk summary</span>
+        <span class="text-[10px] text-gray-500">return code: ${binwalkResult.returncode}</span>
+    `;
+    summaryBlock.appendChild(summaryHeader);
+    const summaryPre = document.createElement("pre");
+    summaryPre.className =
+        "text-[11px] text-green-400 whitespace-pre-wrap break-all max-h-48 overflow-auto max-w-full";
+    const summaryText = binwalkResult.summary || "";
+    summaryPre.innerHTML = highlightFlags(summaryText, (flagsResult && flagsResult.flags) || []);
+    summaryBlock.appendChild(summaryPre);
+    container.appendChild(summaryBlock);
+
+    const filesBlock = document.createElement("div");
+    filesBlock.className = "border border-gray-800 rounded p-2";
+    const filesHeader = document.createElement("div");
+    filesHeader.className = "mb-1 text-[10px] text-gray-400";
+    filesHeader.textContent = "Embedded files";
+    filesBlock.appendChild(filesHeader);
+
+    const paths = Array.isArray(binwalkResult.extracted_paths) ? binwalkResult.extracted_paths : [];
+    if (!paths.length) {
+        const none = document.createElement("div");
+        none.className = "text-[11px] text-gray-500";
+        none.textContent = "No embedded files extracted by binwalk.";
+        filesBlock.appendChild(none);
+    } else {
+        const list = document.createElement("div");
+        list.className = "space-y-1 text-[11px]";
+        paths.forEach((relPath) => {
+            const entry = (extractedFiles || []).find((e) => e.name === relPath);
+            const row = document.createElement("div");
+            row.className = "flex items-center justify-between";
+            if (entry && entry.url) {
+                const link = document.createElement("a");
+                link.href = entry.url;
+                link.textContent = relPath;
+                link.className = "text-emerald-400 hover:text-emerald-300 break-all";
+                link.target = "_blank";
+                row.appendChild(link);
+            } else {
+                const span = document.createElement("span");
+                span.textContent = relPath;
+                span.className = "text-gray-300 break-all";
+                row.appendChild(span);
+            }
+            list.appendChild(row);
+        });
+        filesBlock.appendChild(list);
+    }
+
+    container.appendChild(filesBlock);
+
+    binwalkPanel.appendChild(container);
+}
+
+
 function renderImageGrid(container, entries, labelTransform) {
     container.innerHTML = "";
     entries.forEach((entry) => {
@@ -433,7 +517,7 @@ function populatePanels(result) {
     renderJson(fileInfoPanel, result.file_info);
     renderJson(exifPanel, result.exif);
     renderJson(headerFooterPanel, result.header_footer);
-    renderJson(binwalkPanel, result.binwalk);
+    renderBinwalkPanel(result.binwalk, result.extracted_files || [], result.flags);
     renderLsbPanel(result.lsb, result.flags);
     renderZstegPanel(result.zsteg, result.flags);
     renderJson(steghidePanel, result.steghide);
