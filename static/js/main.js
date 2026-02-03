@@ -291,6 +291,65 @@ function renderStringsPanel(stringsResult, flagsResult) {
 }
 
 
+function renderLsbPanel(lsbResult, flagsResult) {
+    lsbPanel.innerHTML = "";
+    if (!lsbResult) {
+        lsbPanel.textContent = "No LSB data.";
+        return;
+    }
+    if (lsbResult.error) {
+        lsbPanel.textContent = "LSB error: " + lsbResult.error;
+        return;
+    }
+
+    const container = document.createElement("div");
+    container.className = "space-y-3";
+
+    const channels = lsbResult.channels || {};
+    Object.entries(channels).forEach(([name, data]) => {
+        const block = document.createElement("div");
+        block.className = "border border-gray-800 rounded p-2";
+
+        const header = document.createElement("div");
+        header.className = "flex justify-between items-center mb-1";
+        header.innerHTML = `
+            <span class="font-semibold text-emerald-400">Channel ${name.toUpperCase()}</span>
+            <span class="text-[10px] text-gray-500">${data.length || 0} chars</span>
+        `;
+        block.appendChild(header);
+
+        const pre = document.createElement("pre");
+        pre.className =
+            "text-[11px] text-green-400 whitespace-pre-wrap break-all max-h-32 overflow-auto max-w-full";
+        const preview = data.preview || "";
+        pre.innerHTML = highlightFlags(preview, flagsResult.flags);
+        block.appendChild(pre);
+
+        container.appendChild(block);
+    });
+
+    const combined = lsbResult.combined || {};
+    const combinedBlock = document.createElement("div");
+    combinedBlock.className = "border border-gray-800 rounded p-2";
+    const combinedHeader = document.createElement("div");
+    combinedHeader.className = "flex justify-between items-center mb-1";
+    combinedHeader.innerHTML = `
+        <span class="font-semibold text-emerald-400">Combined RGB</span>
+        <span class="text-[10px] text-gray-500">${combined.length || 0} chars</span>
+    `;
+    combinedBlock.appendChild(combinedHeader);
+    const combinedPre = document.createElement("pre");
+    combinedPre.className =
+        "text-[11px] text-green-400 whitespace-pre-wrap break-all max-h-32 overflow-auto max-w-full";
+    const combinedPreview = combined.preview || "";
+    combinedPre.innerHTML = highlightFlags(combinedPreview, flagsResult.flags);
+    combinedBlock.appendChild(combinedPre);
+    container.appendChild(combinedBlock);
+
+    lsbPanel.appendChild(container);
+}
+
+
 function renderImageGrid(container, entries, labelTransform) {
     container.innerHTML = "";
     entries.forEach((entry) => {
@@ -319,7 +378,7 @@ function populatePanels(result) {
     renderJson(exifPanel, result.exif);
     renderJson(headerFooterPanel, result.header_footer);
     renderJson(binwalkPanel, result.binwalk);
-    renderJson(lsbPanel, result.lsb);
+    renderLsbPanel(result.lsb, result.flags);
     renderJson(zstegPanel, result.zsteg);
     renderJson(steghidePanel, result.steghide);
     renderJson(outguessPanel, result.outguess_openstego);
