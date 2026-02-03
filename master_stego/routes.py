@@ -11,7 +11,7 @@ from master_stego.analysis.pipeline import run_full_analysis
 
 def _call_gemini(api_key, analysis, message):
     url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
+        "https://generativelanguage.googleapis.com/v1/models/"
         "gemini-1.5-flash:generateContent?key=" + api_key
     )
 
