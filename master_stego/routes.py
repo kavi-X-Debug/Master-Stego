@@ -162,9 +162,6 @@ def register_routes(app):
             return jsonify({"error": "Empty filename"}), 400
 
         ext = os.path.splitext(uploaded.filename.lower())[1]
-        if ext not in [".png", ".jpg", ".jpeg", ".bmp", ".webp"]:
-            return jsonify({"error": "Unsupported file type"}), 400
-
         session_id = uuid.uuid4().hex
         session_dir = os.path.join(TMP_DIR, session_id)
         os.makedirs(session_dir, exist_ok=True)
