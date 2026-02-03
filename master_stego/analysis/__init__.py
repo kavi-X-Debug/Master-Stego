@@ -9,7 +9,5 @@ from . import bitplanes
 from . import lsb_analysis
 from . import zsteg_module
 from . import steghide_module
-from . import outguess_openstego
-from . import compression_detection
 from . import encoding_detection
 from . import flag_detection

@@ -33,8 +33,6 @@ def run_full_analysis(file_path, session_id, session_dir):
         "lsb": {},
         "zsteg": {},
         "steghide": {},
-        "outguess_openstego": {},
-        "compression": {},
         "encodings": {},
         "flags": {},
         "extracted_files": [],
@@ -67,10 +65,6 @@ def run_full_analysis(file_path, session_id, session_dir):
         result["zsteg"] = {"skipped": True, "reason": "zsteg is PNG-only"}
 
     result["steghide"] = safe_run("steghide", lambda: steghide_module.analyze(file_path, session_dir))
-    result["outguess_openstego"] = safe_run(
-        "outguess_openstego", lambda: outguess_openstego.analyze(file_path, session_dir)
-    )
-    result["compression"] = safe_run("compression", lambda: compression_detection.analyze(file_path))
     result["encodings"] = safe_run("encodings", lambda: encoding_detection.analyze(result["strings"]))
     result["flags"] = safe_run("flags", lambda: flag_detection.analyze(result))
 

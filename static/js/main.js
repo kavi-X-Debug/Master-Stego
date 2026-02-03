@@ -26,8 +26,6 @@ const bitplanesPanel = document.getElementById("bitplanes-panel");
 const lsbPanel = document.getElementById("lsb-panel");
 const zstegPanel = document.getElementById("zsteg-panel");
 const steghidePanel = document.getElementById("steghide-panel");
-const outguessPanel = document.getElementById("outguess-panel");
-const compressionPanel = document.getElementById("compression-panel");
 const encodingsPanel = document.getElementById("encodings-panel");
 
 let lastResult = null;
@@ -94,8 +92,6 @@ function resetUI() {
     lsbPanel.textContent = "";
     zstegPanel.textContent = "";
     steghidePanel.textContent = "";
-    outguessPanel.textContent = "";
-    compressionPanel.textContent = "";
     encodingsPanel.textContent = "";
 
     stringsPanel.innerHTML = "";
@@ -350,6 +346,62 @@ function renderLsbPanel(lsbResult, flagsResult) {
 }
 
 
+function renderZstegPanel(zstegResult, flagsResult) {
+    zstegPanel.innerHTML = "";
+    if (!zstegResult) {
+        zstegPanel.textContent = "No zsteg data.";
+        return;
+    }
+    if (zstegResult.error) {
+        zstegPanel.textContent = "zsteg error: " + zstegResult.error;
+        return;
+    }
+
+    if (zstegResult.available === false) {
+        zstegPanel.textContent = "zsteg not installed on server.";
+        return;
+    }
+
+    const container = document.createElement("div");
+    container.className = "space-y-3";
+
+    const stdoutBlock = document.createElement("div");
+    stdoutBlock.className = "border border-gray-800 rounded p-2";
+    const stdoutHeader = document.createElement("div");
+    stdoutHeader.className = "flex justify-between items-center mb-1";
+    stdoutHeader.innerHTML = `
+        <span class="font-semibold text-emerald-400">zsteg -a output</span>
+        <span class="text-[10px] text-gray-500">return code: ${zstegResult.returncode}</span>
+    `;
+    stdoutBlock.appendChild(stdoutHeader);
+    const stdoutPre = document.createElement("pre");
+    stdoutPre.className =
+        "text-[11px] text-green-400 whitespace-pre-wrap break-all max-h-64 overflow-auto max-w-full";
+    const stdout = zstegResult.stdout || "";
+    stdoutPre.innerHTML = highlightFlags(stdout, (flagsResult && flagsResult.flags) || []);
+    stdoutBlock.appendChild(stdoutPre);
+    container.appendChild(stdoutBlock);
+
+    const stderrText = zstegResult.stderr || "";
+    if (stderrText && stderrText.trim()) {
+        const stderrBlock = document.createElement("div");
+        stderrBlock.className = "border border-gray-800 rounded p-2";
+        const stderrHeader = document.createElement("div");
+        stderrHeader.className = "mb-1 text-[10px] text-gray-400";
+        stderrHeader.textContent = "stderr";
+        stderrBlock.appendChild(stderrHeader);
+        const stderrPre = document.createElement("pre");
+        stderrPre.className =
+            "text-[11px] text-gray-400 whitespace-pre-wrap break-all max-h-32 overflow-auto max-w-full";
+        stderrPre.textContent = stderrText;
+        stderrBlock.appendChild(stderrPre);
+        container.appendChild(stderrBlock);
+    }
+
+    zstegPanel.appendChild(container);
+}
+
+
 function renderImageGrid(container, entries, labelTransform) {
     container.innerHTML = "";
     entries.forEach((entry) => {
@@ -379,10 +431,8 @@ function populatePanels(result) {
     renderJson(headerFooterPanel, result.header_footer);
     renderJson(binwalkPanel, result.binwalk);
     renderLsbPanel(result.lsb, result.flags);
-    renderJson(zstegPanel, result.zsteg);
+    renderZstegPanel(result.zsteg, result.flags);
     renderJson(steghidePanel, result.steghide);
-    renderJson(outguessPanel, result.outguess_openstego);
-    renderJson(compressionPanel, result.compression);
     renderJson(encodingsPanel, result.encodings);
 
     renderStringsPanel(result.strings, result.flags);
