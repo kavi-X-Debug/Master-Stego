@@ -4,9 +4,22 @@
     <meta charset="UTF-8">
     <title>Master Stego - CTF Image Steganography Analyzer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://ibb.co/fz12z0Cv">
+    <link rel="icon" type="image/png" href="/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body {
+            font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .font-mono,
+        pre,
+        code {
+            font-family: "Open Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
         .loading-overlay {
             position: fixed;
             inset: 0;
@@ -202,7 +215,30 @@
                         </div>
                     </div>
                 </div>
-
+                <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3 transition-transform duration-300 hover:-translate-y-1 hover:border-emerald-500/70 hover:shadow-[0_0_24px_rgba(16,185,129,0.35)]">
+                    <h2 class="text-sm font-semibold text-emerald-400 uppercase tracking-wide">Gemini Assistant</h2>
+                    <p class="text-[11px] text-gray-400">
+                        Ask questions about the analysis to get hints and flag ideas.
+                    </p>
+                    <div id="chat-log" class="space-y-2 text-[11px] max-h-48 overflow-auto border border-gray-800 rounded p-2 bg-black/40">
+                        <div class="text-gray-500">Run an analysis, then ask a question here.</div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <input
+                            id="chat-input"
+                            type="text"
+                            placeholder="Ask Gemini about this image..."
+                            class="flex-1 bg-black/40 border border-gray-700 rounded px-2 py-1 text-[11px] text-gray-200 focus:outline-none focus:border-emerald-500"
+                        />
+                        <button
+                            type="button"
+                            id="chat-send-button"
+                            class="px-2 py-1 text-[11px] font-semibold rounded bg-emerald-500 text-black hover:bg-emerald-400 transition"
+                        >
+                            Send
+                        </button>
+                    </div>
+                </div>
             </section>
 
             <section class="lg:col-span-3 space-y-4">

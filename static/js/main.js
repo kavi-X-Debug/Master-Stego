@@ -7,6 +7,9 @@ const flagsContainer = document.getElementById("flags-container");
 const flagPatternInput = document.getElementById("flag-pattern-input");
 const flagSearchButton = document.getElementById("flag-search-button");
 const customFlagsContainer = document.getElementById("custom-flags-container");
+const chatLog = document.getElementById("chat-log");
+const chatInput = document.getElementById("chat-input");
+const chatSendButton = document.getElementById("chat-send-button");
 
 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
@@ -103,6 +106,10 @@ function resetUI() {
     flagsContainer.innerHTML = '<p class="text-gray-500">No flags detected yet.</p>';
     customFlagsContainer.innerHTML = '<p class="text-gray-500">No custom pattern searched.</p>';
 
+    if (chatLog) {
+        chatLog.innerHTML = '<div class="text-gray-500">Run an analysis, then ask a question here.</div>';
+    }
+
     switchTab("file-info");
     hideLoader();
 }
@@ -142,6 +149,87 @@ function renderFlags(flagsResult) {
         `;
         flagsContainer.appendChild(div);
     });
+}
+
+
+function appendChatBubble(role, text) {
+    if (!chatLog) {
+        return;
+    }
+    const wrapper = document.createElement("div");
+    wrapper.className = "flex " + (role === "user" ? "justify-end" : "justify-start");
+    const bubble = document.createElement("div");
+    bubble.className =
+        "max-w-[80%] px-2 py-1 rounded text-[11px] whitespace-pre-wrap break-words " +
+        (role === "user"
+            ? "bg-emerald-600 text-black"
+            : "bg-gray-800 text-gray-100 border border-gray-700");
+    bubble.textContent = text;
+    wrapper.appendChild(bubble);
+    chatLog.appendChild(wrapper);
+    chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+
+async function sendChatMessage() {
+    if (!chatInput || !chatLog) {
+        return;
+    }
+    if (!lastResult) {
+        appendChatBubble("assistant", "Run an analysis first, then ask about the results.");
+        return;
+    }
+    const message = chatInput.value.trim();
+    if (!message) {
+        return;
+    }
+
+    appendChatBubble("user", message);
+    chatInput.value = "";
+
+    const thinkingId = "chat-thinking";
+    const thinking = document.createElement("div");
+    thinking.id = thinkingId;
+    thinking.className = "text-[11px] text-gray-500";
+    thinking.textContent = "Gemini is thinking...";
+    chatLog.appendChild(thinking);
+    chatLog.scrollTop = chatLog.scrollHeight;
+
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                message,
+                analysis: lastResult,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorPayload = await response.json().catch(() => ({}));
+            const msg = errorPayload.error || response.statusText || "Chat request failed.";
+            appendChatBubble("assistant", msg);
+            return;
+        }
+
+        const payload = await response.json();
+        if (payload.reply) {
+            appendChatBubble("assistant", payload.reply);
+        } else if (payload.error) {
+            appendChatBubble("assistant", payload.error);
+        } else {
+            appendChatBubble("assistant", "Received an empty response from the chatbot.");
+        }
+    } catch (err) {
+        appendChatBubble("assistant", "Network error while contacting the chatbot.");
+    } finally {
+        const existingThinking = document.getElementById(thinkingId);
+        if (existingThinking && existingThinking.parentNode) {
+            existingThinking.parentNode.removeChild(existingThinking);
+        }
+    }
 }
 
 
@@ -386,6 +474,23 @@ flagPatternInput.addEventListener("keydown", (event) => {
         runCustomFlagSearch();
     }
 });
+
+
+if (chatSendButton) {
+    chatSendButton.addEventListener("click", () => {
+        sendChatMessage();
+    });
+}
+
+
+if (chatInput) {
+    chatInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendChatMessage();
+        }
+    });
+}
 
 
 switchTab("file-info");

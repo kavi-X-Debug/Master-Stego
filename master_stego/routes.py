@@ -1,9 +1,82 @@
 import uuid
 import os
+import json
+import urllib.request
+import urllib.error
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 
 from master_stego import TMP_DIR
 from master_stego.analysis.pipeline import run_full_analysis
+
+
+def _call_gemini(api_key, analysis, message):
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        "gemini-1.5-flash:generateContent?key=" + api_key
+    )
+
+    context_text = (
+        "You are a CTF steganography assistant. The user has run a suite of tools "
+        "on an image to search for hidden data and flags. "
+        "Use the JSON analysis output and the user question to give concise, "
+        "practical guidance for finding or validating flags.\n\n"
+        "Analysis JSON:\n"
+        + json.dumps(analysis, default=str) +
+        "\n\nUser question:\n" +
+        message
+    )
+
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "text": context_text,
+                    }
+                ]
+            }
+        ]
+    }
+
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            resp_data = resp.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        try:
+            body = exc.read().decode("utf-8")
+        except Exception:
+            body = ""
+        return None, f"Gemini API HTTP error: {exc.code} {exc.reason} {body}"
+    except urllib.error.URLError as exc:
+        return None, f"Gemini API connection error: {exc.reason}"
+    except Exception as exc:
+        return None, f"Gemini API request failed: {exc}"
+
+    try:
+        parsed = json.loads(resp_data)
+    except Exception:
+        return None, "Failed to parse Gemini response JSON"
+
+    try:
+        candidates = parsed.get("candidates") or []
+        if not candidates:
+            return None, "Empty response from Gemini"
+        content = candidates[0].get("content") or {}
+        parts = content.get("parts") or []
+        texts = [p.get("text") for p in parts if isinstance(p.get("text"), str)]
+        if not texts:
+            return None, "No text in Gemini response"
+        return "\n\n".join(texts), None
+    except Exception as exc:
+        return None, f"Unexpected Gemini response format: {exc}"
 
 
 def register_routes(app):
@@ -58,6 +131,25 @@ def register_routes(app):
             abort(404)
 
         return send_from_directory(session_dir, filename, as_attachment=True)
+
+    @bp.route("/api/chat", methods=["POST"])
+    def chat():
+        data = request.get_json(silent=True) or {}
+        message = str(data.get("message", "")).strip()
+        if not message:
+            return jsonify({"error": "Message is required"}), 400
+
+        analysis = data.get("analysis") or {}
+
+        api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if not api_key:
+            return jsonify({"error": "Gemini API key not configured on server"}), 500
+
+        reply, error = _call_gemini(api_key, analysis, message)
+        if error:
+            return jsonify({"error": error}), 502
+
+        return jsonify({"reply": reply})
 
     app.register_blueprint(bp)
 
